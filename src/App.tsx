@@ -162,7 +162,6 @@ const App = () => {
   const [specialConfigs, setSpecialConfigs] = useState<SpecialConfig[]>([]);
   const [emailBody, setEmailBody] = useState('');
   const [emailHtml, setEmailHtml] = useState('');
-  const [fileName, setFileName] = useState('');
 
   useEffect(() => {
     setSpecialConfigs(loadSpecialConfigs());
@@ -174,8 +173,6 @@ const App = () => {
 
     setLoading(true);
     setError('');
-    setFileName(file.name);
-
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
