@@ -10,4 +10,4 @@ Aplicação em React + TypeScript para monitoramento de materiais parados nos Co
 4. Em `Source`, selecione `GitHub Actions`.
 5. O workflow em `.github/workflows/deploy.yml` fará o deploy automaticamente.
 
-> Se o nome do repositório for diferente de `correios-materials-monitor`, ajuste o `base` em `vite.config.ts` para o nome correto.
+> O `base` já está configurado para este repositório (`/essentra/`). Se o nome do repositório mudar, ajuste o `base` em `/home/runner/work/essentra/essentra/vite.config.ts`.
