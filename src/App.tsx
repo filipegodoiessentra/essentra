@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import {
   ArrowDownToLine,
   Copy,
@@ -130,6 +130,53 @@ const normalizeValue = (value: unknown) => {
   return String(value).trim();
 };
 
+const worksheetToJson = <T extends Record<string, string>>(worksheet: ExcelJS.Worksheet) => {
+  const headerRow = worksheet.getRow(1);
+  const headers = Array.from({ length: headerRow.cellCount }, (_, index) =>
+    normalizeValue(headerRow.getCell(index + 1).text),
+  );
+
+  const rows: T[] = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+
+    const entry: Record<string, string> = {};
+    let hasValues = false;
+
+    headers.forEach((header, index) => {
+      if (!header) return;
+
+      const value = normalizeValue(row.getCell(index + 1).text);
+      entry[header] = value;
+      if (value) hasValues = true;
+    });
+
+    if (hasValues) {
+      rows.push(entry as T);
+    }
+  });
+
+  return rows;
+};
+
+const exportColumns = [
+  { header: 'NF', key: 'NF' },
+  { header: 'DATA DA POSTAGEM', key: 'DATA_DA_POSTAGEM' },
+  { header: 'DESTINATÁRIO', key: 'DESTINATARIO' },
+  { header: 'SITUAÇÃO', key: 'SITUACAO' },
+  { header: 'CFOP', key: 'CFOP' },
+  { header: 'AMOSTRA OU VENDA', key: 'AMOSTRA_OU_VENDA' },
+  { header: 'ID', key: 'ID' },
+  { header: 'RESPONSÁVEL', key: 'RESPONSAVEL' },
+  { header: 'DIAS_PARADOS', key: 'DIAS_PARADOS' },
+  { header: 'PRIORIDADE', key: 'PRIORIDADE' },
+] as const;
+
+const escapeCsvValue = (value: string | number) => {
+  const normalized = String(value).replaceAll('"', '""');
+  return /[",;\n]/.test(normalized) ? `"${normalized}"` : normalized;
+};
+
 const parseDate = (value: string) => {
   if (!value) return null;
   const [day, month, year] = value.split(/[/-]/).map((part) => part.trim());
@@ -175,16 +222,17 @@ const App = () => {
     setError('');
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(data);
       const requiredSheets = ['Clientes', 'NFS FATURADAS', 'Portal Postal'];
-      const missingSheets = requiredSheets.filter((sheet) => !workbook.SheetNames.includes(sheet));
+      const missingSheets = requiredSheets.filter((sheet) => !workbook.getWorksheet(sheet));
       if (missingSheets.length) {
         throw new Error(`Aba(s) ausente(s): ${missingSheets.join(', ')}`);
       }
 
-      const clientsSheet = XLSX.utils.sheet_to_json<ClientRow>(workbook.Sheets['Clientes'], { defval: '' });
-      const nfsSheet = XLSX.utils.sheet_to_json<NfRow>(workbook.Sheets['NFS FATURADAS'], { defval: '' });
-      const portalSheet = XLSX.utils.sheet_to_json<PortalRow>(workbook.Sheets['Portal Postal'], { defval: '' });
+      const clientsSheet = worksheetToJson<ClientRow>(workbook.getWorksheet('Clientes')!);
+      const nfsSheet = worksheetToJson<NfRow>(workbook.getWorksheet('NFS FATURADAS')!);
+      const portalSheet = worksheetToJson<PortalRow>(workbook.getWorksheet('Portal Postal')!);
 
       const clientsMap = new Map<string, ClientRow>();
       clientsSheet.forEach((client) => {
@@ -418,7 +466,7 @@ Atenciosamente,`;
     }
   };
 
-  const exportTable = (type: 'xlsx' | 'csv' | 'pdf') => {
+  const exportTable = async (type: 'xlsx' | 'csv' | 'pdf') => {
     if (type === 'pdf') {
       const printWindow = window.open('', '_blank', 'width=900,height=700');
       if (!printWindow) return;
@@ -462,22 +510,40 @@ Atenciosamente,`;
       return;
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(filteredRows.map((row) => ({
+    const exportData = filteredRows.map((row) => ({
       NF: row.NF,
-      'DATA DA POSTAGEM': row.DATA_DA_POSTAGEM,
-      DESTINATÁRIO: row.DESTINATARIO,
-      SITUAÇÃO: row.SITUACAO,
+      DATA_DA_POSTAGEM: row.DATA_DA_POSTAGEM,
+      DESTINATARIO: row.DESTINATARIO,
+      SITUACAO: row.SITUACAO,
       CFOP: row.CFOP,
-      'AMOSTRA OU VENDA': row.AMOSTRA_OU_VENDA,
+      AMOSTRA_OU_VENDA: row.AMOSTRA_OU_VENDA,
       ID: row.ID,
-      RESPONSÁVEL: row.RESPONSAVEL,
+      RESPONSAVEL: row.RESPONSAVEL,
       DIAS_PARADOS: row.DIAS_PARADOS,
       PRIORIDADE: row.PRIORIDADE,
-    })));
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório');
-    const blob = XLSX.write(workbook, { bookType: type === 'csv' ? 'csv' : 'xlsx', type: 'array' });
-    const url = URL.createObjectURL(new Blob([blob]));
+    }));
+
+    const blob = type === 'csv'
+      ? new Blob([
+        `\uFEFF${[
+          exportColumns.map((column) => escapeCsvValue(column.header)).join(';'),
+          ...exportData.map((row) => exportColumns
+            .map((column) => escapeCsvValue(row[column.key]))
+            .join(';')),
+        ].join('\n')}`,
+      ], { type: 'text/csv;charset=utf-8;' })
+      : new Blob([await (async () => {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Relatório');
+        worksheet.columns = exportColumns.map((column) => ({
+          header: column.header,
+          key: column.key,
+          width: Math.max(column.header.length + 2, 18),
+        }));
+        worksheet.addRows(exportData);
+        return workbook.xlsx.writeBuffer();
+      })()]);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `relatorio.${type === 'csv' ? 'csv' : 'xlsx'}`;
