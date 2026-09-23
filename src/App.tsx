@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import ExcelJS from 'exceljs';
+import readXlsxFile from 'read-excel-file/browser';
+import writeXlsxFile from 'write-excel-file/browser';
 import {
   ArrowDownToLine,
   Copy,
@@ -103,6 +104,19 @@ type SpecialConfig = {
   mensagem: string;
 };
 
+type ExportRow = {
+  NF: string;
+  DATA_DA_POSTAGEM: string;
+  DESTINATARIO: string;
+  SITUACAO: string;
+  CFOP: string;
+  AMOSTRA_OU_VENDA: string;
+  ID: string;
+  RESPONSAVEL: string;
+  DIAS_PARADOS: number;
+  PRIORIDADE: string;
+};
+
 type FilterState = {
   responsavel: string;
   cliente: string;
@@ -130,23 +144,18 @@ const normalizeValue = (value: unknown) => {
   return String(value).trim();
 };
 
-const worksheetToJson = <T extends Record<string, string>>(worksheet: ExcelJS.Worksheet) => {
-  const headerRow = worksheet.getRow(1);
-  const headers = Array.from({ length: headerRow.cellCount }, (_, index) =>
-    normalizeValue(headerRow.getCell(index + 1).text),
-  );
+const sheetRowsToJson = <T extends Record<string, string>>(sheetRows: unknown[][]) => {
+  const [headerRow = [], ...dataRows] = sheetRows;
+  const headers = headerRow.map((cell) => normalizeValue(cell));
 
-  const rows: T[] = [];
-  worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
-
+  return dataRows.reduce<T[]>((rows, row) => {
     const entry: Record<string, string> = {};
     let hasValues = false;
 
     headers.forEach((header, index) => {
       if (!header) return;
 
-      const value = normalizeValue(row.getCell(index + 1).text);
+      const value = normalizeValue(row[index]);
       entry[header] = value;
       if (value) hasValues = true;
     });
@@ -154,9 +163,9 @@ const worksheetToJson = <T extends Record<string, string>>(worksheet: ExcelJS.Wo
     if (hasValues) {
       rows.push(entry as T);
     }
-  });
 
-  return rows;
+    return rows;
+  }, []);
 };
 
 const exportColumns = [
@@ -173,7 +182,7 @@ const exportColumns = [
 ] as const;
 
 const escapeCsvValue = (value: string | number) => {
-  const normalized = String(value).replaceAll('"', '""');
+  const normalized = String(value).replace(/"/g, '""');
   return /[",;\n]/.test(normalized) ? `"${normalized}"` : normalized;
 };
 
@@ -221,18 +230,17 @@ const App = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(data);
+      const sheets = await readXlsxFile(file);
       const requiredSheets = ['Clientes', 'NFS FATURADAS', 'Portal Postal'];
-      const missingSheets = requiredSheets.filter((sheet) => !workbook.getWorksheet(sheet));
+      const sheetsMap = new Map(sheets.map(({ sheet, data }) => [sheet, data]));
+      const missingSheets = requiredSheets.filter((sheet) => !sheetsMap.has(sheet));
       if (missingSheets.length) {
         throw new Error(`Aba(s) ausente(s): ${missingSheets.join(', ')}`);
       }
 
-      const clientsSheet = worksheetToJson<ClientRow>(workbook.getWorksheet('Clientes')!);
-      const nfsSheet = worksheetToJson<NfRow>(workbook.getWorksheet('NFS FATURADAS')!);
-      const portalSheet = worksheetToJson<PortalRow>(workbook.getWorksheet('Portal Postal')!);
+      const clientsSheet = sheetRowsToJson<ClientRow>(sheetsMap.get('Clientes') ?? []);
+      const nfsSheet = sheetRowsToJson<NfRow>(sheetsMap.get('NFS FATURADAS') ?? []);
+      const portalSheet = sheetRowsToJson<PortalRow>(sheetsMap.get('Portal Postal') ?? []);
 
       const clientsMap = new Map<string, ClientRow>();
       clientsSheet.forEach((client) => {
@@ -510,7 +518,7 @@ Atenciosamente,`;
       return;
     }
 
-    const exportData = filteredRows.map((row) => ({
+    const exportData: ExportRow[] = filteredRows.map((row) => ({
       NF: row.NF,
       DATA_DA_POSTAGEM: row.DATA_DA_POSTAGEM,
       DESTINATARIO: row.DESTINATARIO,
@@ -532,17 +540,14 @@ Atenciosamente,`;
             .join(';')),
         ].join('\n')}`,
       ], { type: 'text/csv;charset=utf-8;' })
-      : new Blob([await (async () => {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Relatório');
-        worksheet.columns = exportColumns.map((column) => ({
+      : await writeXlsxFile(exportData, {
+        columns: exportColumns.map((column) => ({
           header: column.header,
-          key: column.key,
           width: Math.max(column.header.length + 2, 18),
-        }));
-        worksheet.addRows(exportData);
-        return workbook.xlsx.writeBuffer();
-      })()]);
+          cell: (row: ExportRow) => row[column.key],
+        })),
+        sheet: 'Relatório',
+      }).toBlob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
