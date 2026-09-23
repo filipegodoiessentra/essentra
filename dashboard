@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essentra Dashboard - Ferramentas e Automações</title>
+    <!-- Biblioteca de Ícones (FontAwesome) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Paleta de Cores baseada no logo Essentra */
+        :root {
+            --essentra-red: #D20019;
+            --essentra-purple: #95004D;
+            --essentra-dark-grey: #53565A;
+            --essentra-light-grey: #97999B;
+            --bg-color: #f4f6f9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 50px 20px;
+            color: var(--essentra-dark-grey);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header img {
+            max-width: 320px;
+            height: auto;
+        }
+
+        .instructions {
+            text-align: center;
+            background-color: #eef2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 0 auto 40px auto;
+            max-width: 850px;
+            border-left: 6px solid var(--essentra-red);
+            font-size: 1rem;
+            line-height: 1.5;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 40px; /* Mais espaço entre os blocos */
+            max-width: 1250px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+            padding: 35px; /* Mais espaço interno nos blocos */
+            border-top: 6px solid var(--essentra-dark-grey);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card.dynamics { border-top-color: var(--essentra-red); }
+        .card.pricing { border-top-color: var(--essentra-purple); }
+        .card.quotes { border-top-color: var(--essentra-dark-grey); }
+
+        .card h2 {
+            font-size: 1.35rem;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Mais espaço entre o ícone e o título */
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 25px; /* Mais espaço antes dos botões começarem */
+        }
+
+        /* Estilo dos Links/Botões */
+        .link-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px; /* Botões mais "gordinhos" e fáceis de clicar/ler */
+            margin-bottom: 16px; /* Mais espaço entre um botão e outro */
+            background: #f8f9fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--essentra-dark-grey);
+            font-weight: 500;
+            font-size: 1rem;
+            line-height: 1.4;
+            transition: all 0.2s;
+            cursor: grab;
+            gap: 15px; /* Garante que o ícone, texto e badge não se esmaguem */
+        }
+
+        .link-item:hover {
+            background: #ffffff;
+            border-color: var(--essentra-light-grey);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        /* Ícone principal à esquerda */
+        .link-item i:first-child {
+            font-size: 1.2rem;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        .card.dynamics .link-item i:first-child { color: var(--essentra-red); }
+        .card.pricing .link-item i:first-child { color: var(--essentra-purple); }
+        .card.quotes .link-item i:first-child { color: var(--essentra-dark-grey); }
+
+        /* Badges (Arrastar / Abrir Link) */
+        .badge-drag, .badge-link {
+            margin-left: auto;
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap; /* Impede que o botão "Arrastar" quebre em duas linhas */
+            font-weight: 600;
+        }
+
+        .badge-drag {
+            background: #e1e4e8;
+            color: #555;
+        }
+
+        .badge-link {
+            background: var(--essentra-light-grey);
+            color: #fff;
+        }
+        
+        /* Ajuste no texto para ele ocupar o espaço corretamente */
+        .link-text {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <!-- Logo puxando direto do link oficial -->
+        <img src="https://www.essentracomponents.com.br/set-ap/assets/essentra-logo.png" alt="Essentra Components Logo">
+    </div>
+
+    <div class="instructions">
+        <strong><i class="fa-solid fa-circle-info"></i> Dica de Uso:</strong> Para instalar as automações do Dynamics 365, clique no botão desejado, mantenha o clique pressionado e <strong>arraste para a sua barra de favoritos</strong>. Elas rodarão perfeitamente quando você estiver com o ambiente CE aberto.
+    </div>
+
+    <div class="dashboard-container">
+
+        <!-- 1. Automações CE - Dynamics 365 -->
+        <div class="card dynamics">
+            <h2><i class="fa-brands fa-microsoft"></i> Automações CE - Dynamics 365</h2>
+            
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/filipegodoiessentra-patch-1/leads-route?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-route"></i> 
+                <span class="link-text">1.1 Roteador de Leads</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/main/roteamento-com-email?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-envelope-open-text"></i> 
+                <span class="link-text">1.2 Roteador de Leads com E-mail</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/main/relatorio-de-leads-excel?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-file-excel"></i> 
+                <span class="link-text">1.3 Relatório Roteamento Local</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/main/emailtocase?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-envelope-circle-check"></i> 
+                <span class="link-text">1.4 Converter E-mail para Case</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/main/rotear-cases.js?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-briefcase"></i> 
+                <span class="link-text">1.5 Roteador de Cases</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+
+            <a class="link-item" title="Arraste para os favoritos" href="javascript:(async()=>{const js=await fetch('https://raw.githubusercontent.com/filipegodoiessentra/dynamics-snippets/refs/heads/main/Disparo%20de%20e-mails?t='+Date.now()).then(r=>r.text());eval(js);})();">
+                <i class="fa-solid fa-paper-plane"></i> 
+                <span class="link-text">1.6 Disparo de E-mails em Massa</span>
+                <span class="badge-drag"><i class="fa-solid fa-hand-pointer"></i> Arraste</span>
+            </a>
+        </div>
+
+        <!-- 2. Listas de Preços -->
+        <div class="card pricing">
+            <h2><i class="fa-solid fa-tags"></i> Listas de Preços</h2>
+            
+            <a class="link-item" target="_blank" href="https://filipegodoiessentra.github.io/lista-de-preco/">
+                <i class="fa-solid fa-list-check"></i> 
+                <span class="link-text">2.1 Gerenciamento de Listas</span>
+                <span class="badge-link">Abrir Link <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+            </a>
+
+            <a class="link-item" target="_blank" href="https://filipegodoiessentra.github.io/pricelist/">
+                <i class="fa-solid fa-file-import"></i> 
+                <span class="link-text">2.2 Conversor Excel para Listas</span>
+                <span class="badge-link">Abrir Link <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+            </a>
+        </div>
+
+        <!-- 3. Cotações -->
+        <div class="card quotes">
+            <h2><i class="fa-solid fa-file-invoice-dollar"></i> Cotações</h2>
+            
+            <a class="link-item" target="_blank" href="https://filipegodoiessentra.github.io/cotacoes/">
+                <i class="fa-solid fa-robot"></i> 
+                <span class="link-text">3.1 Automação/Regras para Envio</span>
+                <span class="badge-link">Abrir Link <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>
